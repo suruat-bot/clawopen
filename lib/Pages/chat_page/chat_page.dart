@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -10,6 +9,7 @@ import 'package:reins/Constants/constants.dart';
 import 'package:reins/Models/chat_preset.dart';
 import 'package:reins/Models/ollama_model.dart';
 import 'package:reins/Providers/chat_provider.dart';
+import 'package:reins/Providers/connection_provider.dart';
 import 'package:reins/Widgets/chat_app_bar.dart';
 import 'package:reins/Widgets/ollama_bottom_sheet_header.dart';
 import 'package:reins/Widgets/selection_bottom_sheet.dart';
@@ -54,9 +54,11 @@ class _ChatPageState extends State<ChatPage> {
     // Initialize the view model
     _viewModel = Provider.of<ChatPageViewModel>(context, listen: false);
 
-    // If the server address changes, reset the selected model
-    Hive.box('settings').watch(key: 'serverAddress').listen((event) {
-      _selectedModel = null;
+    // When connections change, reset the selected model
+    context.read<ConnectionProvider>().addListener(() {
+      if (mounted) {
+        setState(() => _selectedModel = null);
+      }
     });
 
     // Listen exit request to delete the unused attached images
@@ -111,10 +113,14 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  bool get _hasAnyBackend {
+    return context.read<ConnectionProvider>().connections.isNotEmpty;
+  }
+
   Widget _buildChatBody(ChatProvider chatProvider) {
     if (chatProvider.messages.isEmpty) {
       if (chatProvider.currentChat == null) {
-        if (Hive.box('settings').get('serverAddress') == null) {
+        if (!_hasAnyBackend) {
           return ChatEmpty(
             child: ChatWelcome(
               showingState: _crossFadeState,
@@ -208,7 +214,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _handleSendButton(ChatProvider chatProvider) async {
-    if (Hive.box('settings').get('serverAddress') == null) {
+    if (!_hasAnyBackend) {
       setState(() => _crossFadeState = CrossFadeState.showSecond);
       setState(() => _scale = _scale == 1.0 ? 1.05 : 1.0);
     } else if (chatProvider.currentChat == null) {
@@ -255,7 +261,7 @@ class _ChatPageState extends State<ChatPage> {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
 
     final selectedModel = await showSelectionBottomSheet(
-      key: ValueKey(Hive.box('settings').get('serverAddress')),
+      key: ValueKey(context.read<ConnectionProvider>().connections.length),
       context: context,
       header: OllamaBottomSheetHeader(title: "Select a LLM Model"),
       fetchItems: chatProvider.fetchAvailableModels,

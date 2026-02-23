@@ -5,6 +5,8 @@ class OllamaModel {
   int size;
   String digest;
   OllamaModelDetails details;
+  String? connectionId;
+  String? connectionName;
 
   OllamaModel({
     required this.name,
@@ -13,6 +15,8 @@ class OllamaModel {
     required this.size,
     required this.digest,
     required this.details,
+    this.connectionId,
+    this.connectionName,
   });
 
   factory OllamaModel.fromJson(Map<String, dynamic> json) => OllamaModel(
@@ -35,17 +39,19 @@ class OllamaModel {
 
   @override
   String toString() {
-    return name;
+    return connectionName != null ? '$connectionName: $name' : name;
   }
 
   @override
-  int get hashCode => digest.hashCode;
+  int get hashCode => Object.hash(digest, connectionId);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is OllamaModel && other.digest == digest;
+    return other is OllamaModel &&
+        other.digest == digest &&
+        other.connectionId == connectionId;
   }
 }
 

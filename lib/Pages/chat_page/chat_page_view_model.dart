@@ -5,19 +5,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:reins/Services/services.dart';
 
 class ChatPageViewModel {
-  final OllamaService _ollamaService;
-  final DatabaseService _databaseService;
   final PermissionService _permissionService;
   final ImageService _imageService;
 
   ChatPageViewModel({
-    required OllamaService ollamaService,
-    required DatabaseService databaseService,
     required PermissionService permissionService,
     required ImageService imageService,
-  })  : _ollamaService = ollamaService,
-        _databaseService = databaseService,
-        _permissionService = permissionService,
+  })  : _permissionService = permissionService,
         _imageService = imageService;
 
   /// Handles image picking and compression

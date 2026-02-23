@@ -7,6 +7,7 @@ class OllamaChat {
   final String title;
   final String? systemPrompt;
   final OllamaChatOptions options;
+  final String? connectionId;
 
   OllamaChat({
     String? id,
@@ -14,6 +15,7 @@ class OllamaChat {
     String? title,
     this.systemPrompt,
     OllamaChatOptions? options,
+    this.connectionId,
   })  : id = id ?? Uuid().v4(),
         title = title ?? 'New Chat',
         options = options ?? OllamaChatOptions();
@@ -27,6 +29,7 @@ class OllamaChat {
       options: map['options'] != null
           ? OllamaChatOptions.fromJson(map['options'])
           : null,
+      connectionId: map['connection_id'],
     );
   }
 }

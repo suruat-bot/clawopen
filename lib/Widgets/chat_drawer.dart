@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:reins/Constants/constants.dart';
 import 'package:reins/Providers/chat_provider.dart';
+import 'package:reins/Providers/connection_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -61,24 +62,43 @@ class ChatNavigationDrawer extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
             ),
-            const NavigationDrawerDestination(
-              icon: CircleAvatar(
-                backgroundImage: AssetImage(AppConstants.ollamaIconPng),
-                radius: 16,
-              ),
-              label: Text("Ollama"),
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.add_comment_outlined),
+              label: const Text("New Chat"),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(28, 16, 28, 10),
               child: TitleDivider(title: "Chats"),
             ),
             ...chatProvider.chats.map((chat) {
+              final connectionProvider = context.read<ConnectionProvider>();
+              final conn = chat.connectionId != null
+                  ? connectionProvider.getConnection(chat.connectionId!)
+                  : null;
               return NavigationDrawerDestination(
                 icon: const Icon(Icons.chat_outlined),
                 label: Expanded(
-                  child: Text(
-                    chat.title,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        chat.title,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (conn != null)
+                        Text(
+                          conn.name,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.color
+                                    ?.withOpacity(0.6),
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
                 selectedIcon: const Icon(Icons.chat),

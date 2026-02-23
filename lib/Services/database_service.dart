@@ -22,14 +22,15 @@ class DatabaseService {
   Future<void> open(String databaseFile) async {
     _db = await openDatabase(
       path.join(await getDatabasesPathForPlatform(), databaseFile),
-      version: 1,
+      version: 2,
       onCreate: (Database db, int version) async {
         await db.execute('''CREATE TABLE IF NOT EXISTS chats (
 chat_id TEXT PRIMARY KEY,
 model TEXT NOT NULL,
 chat_title TEXT NOT NULL,
 system_prompt TEXT,
-options TEXT
+options TEXT,
+connection_id TEXT
 ) WITHOUT ROWID;''');
 
         await db.execute('''CREATE TABLE IF NOT EXISTS messages (
@@ -56,6 +57,11 @@ BEGIN
   INSERT INTO cleanup_jobs (image_paths) VALUES (OLD.images);
 END;''');
       },
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE chats ADD COLUMN connection_id TEXT');
+        }
+      },
     );
   }
 
@@ -63,7 +69,7 @@ END;''');
 
   // Chat Operations
 
-  Future<OllamaChat> createChat(String model) async {
+  Future<OllamaChat> createChat(String model, {String? connectionId}) async {
     final id = Uuid().v4();
 
     await _db.insert('chats', {
@@ -72,6 +78,7 @@ END;''');
       'chat_title': 'New Chat',
       'system_prompt': null,
       'options': null,
+      'connection_id': connectionId,
     });
 
     return (await getChat(id))!;
@@ -97,15 +104,20 @@ END;''');
     String? newTitle,
     String? newSystemPrompt,
     OllamaChatOptions? newOptions,
+    String? newConnectionId,
   }) async {
+    final values = <String, dynamic>{
+      'model': newModel ?? chat.model,
+      'chat_title': newTitle ?? chat.title,
+      'system_prompt': newSystemPrompt ?? chat.systemPrompt,
+      'options': newOptions?.toJson() ?? chat.options.toJson(),
+    };
+    if (newConnectionId != null) {
+      values['connection_id'] = newConnectionId;
+    }
     await _db.update(
       'chats',
-      {
-        'model': newModel ?? chat.model,
-        'chat_title': newTitle ?? chat.title,
-        'system_prompt': newSystemPrompt ?? chat.systemPrompt,
-        'options': newOptions?.toJson() ?? chat.options.toJson(),
-      },
+      values,
       where: 'chat_id = ?',
       whereArgs: [chat.id],
     );
@@ -130,7 +142,7 @@ END;''');
 
   Future<List<OllamaChat>> getAllChats() async {
     final List<Map<String, dynamic>> maps = await _db.rawQuery(
-        '''SELECT chats.chat_id, chats.model, chats.chat_title, chats.system_prompt, chats.options, MAX(messages.timestamp) AS last_update
+        '''SELECT chats.chat_id, chats.model, chats.chat_title, chats.system_prompt, chats.options, chats.connection_id, MAX(messages.timestamp) AS last_update
 FROM chats
 LEFT JOIN messages ON chats.chat_id = messages.chat_id
 GROUP BY chats.chat_id

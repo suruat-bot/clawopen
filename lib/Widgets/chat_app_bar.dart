@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:reins/Constants/constants.dart';
+import 'package:reins/Models/connection.dart';
 import 'package:reins/Widgets/chat_configure_bottom_sheet.dart';
 import 'package:reins/Widgets/ollama_bottom_sheet_header.dart';
 import 'package:reins/Widgets/selection_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:reins/Providers/chat_provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:reins/Providers/connection_provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -15,6 +16,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
+    final connectionProvider = Provider.of<ConnectionProvider>(context);
 
     return AppBar(
       title: Column(
@@ -28,11 +30,32 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               customBorder: StadiumBorder(),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  chatProvider.currentChat!.model,
-                  style: GoogleFonts.kodeMono(
-                    textStyle: Theme.of(context).textTheme.labelSmall,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Builder(builder: (context) {
+                      final connId = chatProvider.currentChat!.connectionId;
+                      final conn = connId != null
+                          ? connectionProvider.getConnection(connId)
+                          : null;
+                      if (conn?.type == ConnectionType.openclaw)
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: Icon(
+                            Icons.cloud_outlined,
+                            size: 12,
+                            color: Theme.of(context).textTheme.labelSmall?.color,
+                          ),
+                        );
+                      return const SizedBox.shrink();
+                    }),
+                    Text(
+                      chatProvider.currentChat!.model,
+                      style: GoogleFonts.kodeMono(
+                        textStyle: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -53,19 +76,26 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Future<void> _handleModelSelectionButton(BuildContext context) async {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
 
+    final models = await chatProvider.fetchAvailableModels();
+
     final selectedModelName = await showSelectionBottomSheet(
-      key: ValueKey("${Hive.box('settings').get('serverAddress')}-string"),
+      key: ValueKey("model-selection"),
       context: context,
       header: OllamaBottomSheetHeader(title: "Change The Model"),
-      fetchItems: () async {
-        final models = await chatProvider.fetchAvailableModels();
-
-        return models.map((model) => model.name).toList();
-      },
+      fetchItems: () async =>
+          models.map((model) => model.toString()).toList(),
       currentSelection: chatProvider.currentChat!.model,
     );
 
-    await chatProvider.updateCurrentChat(newModel: selectedModelName);
+    if (selectedModelName != null) {
+      // Find the actual model name (without connection prefix) from the display string
+      final selectedModel = models.where(
+        (m) => m.toString() == selectedModelName,
+      ).firstOrNull;
+      if (selectedModel != null) {
+        await chatProvider.updateCurrentChat(newModel: selectedModel.name);
+      }
+    }
   }
 
   Future<void> _handleConfigureButton(BuildContext context) async {

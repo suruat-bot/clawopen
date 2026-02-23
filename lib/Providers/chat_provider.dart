@@ -1,22 +1,25 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:notification_centre/notification_centre.dart';
 
 import 'package:reins/Constants/constants.dart';
 import 'package:reins/Models/chat_configure_arguments.dart';
+import 'package:reins/Models/connection.dart';
 import 'package:reins/Models/ollama_chat.dart';
 import 'package:reins/Models/ollama_exception.dart';
 import 'package:reins/Models/ollama_message.dart';
 import 'package:reins/Models/ollama_model.dart';
+import 'package:reins/Providers/connection_provider.dart';
+import 'package:reins/Providers/model_provider.dart';
 import 'package:reins/Services/database_service.dart';
 import 'package:reins/Services/ollama_service.dart';
+import 'package:reins/Services/openai_compatible_service.dart';
 import 'package:reins/Services/openclaw_service.dart';
 
 class ChatProvider extends ChangeNotifier {
-  final OllamaService _ollamaService;
-  final OpenClawService _openclawService;
+  final ConnectionProvider _connectionProvider;
+  final ModelProvider _modelProvider;
   final DatabaseService _databaseService;
 
   List<OllamaMessage> _messages = [];
@@ -66,26 +69,63 @@ class ChatProvider extends ChangeNotifier {
   ChatConfigureArguments? _emptyChatConfiguration;
 
   ChatProvider({
-    required OllamaService ollamaService,
-    required OpenClawService openclawService,
+    required ConnectionProvider connectionProvider,
+    required ModelProvider modelProvider,
     required DatabaseService databaseService,
-  })  : _ollamaService = ollamaService,
-        _openclawService = openclawService,
+  })  : _connectionProvider = connectionProvider,
+        _modelProvider = modelProvider,
         _databaseService = databaseService {
     _initialize();
   }
 
-  /// Returns true if OpenClaw is enabled and should be used for chat.
-  bool get _useOpenClaw {
-    final settingsBox = Hive.box('settings');
-    return settingsBox.get('openclawEnabled', defaultValue: false) == true &&
-           settingsBox.get('openclawGatewayUrl', defaultValue: '').isNotEmpty;
+  /// Returns the appropriate service for a chat based on its connectionId.
+  /// Falls back to default connection if no connectionId is set, or uses
+  /// legacy openclaw: prefix detection for old chats.
+  dynamic _getServiceForChat(OllamaChat chat) {
+    // If the chat has a connectionId, use it directly
+    if (chat.connectionId != null) {
+      try {
+        return _connectionProvider.getService(chat.connectionId!);
+      } catch (_) {
+        // Connection might have been deleted, fall through to fallback
+      }
+    }
+
+    // Legacy fallback: detect openclaw: prefix from Phase 1
+    if (chat.model.startsWith('openclaw:')) {
+      // Find the first openclaw connection
+      final openclawConn = _connectionProvider.connections
+          .where((c) => c.type == ConnectionType.openclaw)
+          .firstOrNull;
+      if (openclawConn != null) {
+        return _connectionProvider.getService(openclawConn.id);
+      }
+    }
+
+    // Fall back to default connection
+    final defaultConn = _connectionProvider.defaultConnection;
+    if (defaultConn != null) {
+      return _connectionProvider.getService(defaultConn.id);
+    }
+
+    throw OllamaException('No connections configured. Add a connection in Settings.');
+  }
+
+  /// Returns the ConnectionType for a given chat.
+  ConnectionType? _getConnectionTypeForChat(OllamaChat chat) {
+    if (chat.connectionId != null) {
+      final conn = _connectionProvider.getConnection(chat.connectionId!);
+      if (conn != null) return conn.type;
+    }
+    // Legacy fallback
+    if (chat.model.startsWith('openclaw:')) {
+      return ConnectionType.openclaw;
+    }
+    final defaultConn = _connectionProvider.defaultConnection;
+    return defaultConn?.type;
   }
 
   Future<void> _initialize() async {
-    _updateOllamaServiceAddress();
-    _updateOpenClawServiceConfig();
-
     await _databaseService.open("ollama_chat.db");
     _chats = await _databaseService.getAllChats();
     notifyListeners();
@@ -127,7 +167,10 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> createNewChat(OllamaModel model) async {
-    final chat = await _databaseService.createChat(model.name);
+    final chat = await _databaseService.createChat(
+      model.name,
+      connectionId: model.connectionId,
+    );
 
     _chats.insert(0, chat);
     _currentChatIndex = 0;
@@ -278,10 +321,18 @@ class ChatProvider extends ChangeNotifier {
   Future<OllamaMessage?> _streamOllamaMessage(OllamaChat associatedChat) async {
     if (_messages.isEmpty) return null;
 
-    // Use OpenClaw if enabled, otherwise use Ollama
-    final stream = _useOpenClaw
-        ? _openclawService.chatStream(_messages, chat: associatedChat)
-        : _ollamaService.chatStream(_messages, chat: associatedChat);
+    // Route to the correct backend based on the chat's connection
+    final service = _getServiceForChat(associatedChat);
+    final Stream<OllamaMessage> stream;
+    if (service is OllamaService) {
+      stream = service.chatStream(_messages, chat: associatedChat);
+    } else if (service is OpenClawService) {
+      stream = service.chatStream(_messages, chat: associatedChat);
+    } else if (service is OpenAICompatibleService) {
+      stream = service.chatStream(_messages, chat: associatedChat);
+    } else {
+      throw OllamaException('Unknown service type');
+    }
 
     OllamaMessage? streamingMessage;
     OllamaMessage? receivedMessage;
@@ -399,56 +450,28 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<List<OllamaModel>> fetchAvailableModels() async {
-    if (_useOpenClaw) {
-      return await _openclawService.listModels();
-    }
-    return await _ollamaService.listModels();
-  }
-
-  void _updateOllamaServiceAddress() {
-    final settingsBox = Hive.box('settings');
-    _ollamaService.baseUrl = settingsBox.get('serverAddress');
-
-    settingsBox.listenable(keys: ["serverAddress"]).addListener(() {
-      _ollamaService.baseUrl = settingsBox.get('serverAddress');
-
-      // This will update empty chat state to dismiss "Tap to configure server address" message
-      notifyListeners();
-    });
-  }
-
-  void _updateOpenClawServiceConfig() {
-    final settingsBox = Hive.box('settings');
-    
-    _openclawService.baseUrl = settingsBox.get('openclawGatewayUrl');
-    _openclawService.authToken = settingsBox.get('openclawAuthToken');
-    _openclawService.agentId = settingsBox.get('openclawAgentId', defaultValue: 'main');
-
-    settingsBox.listenable(keys: [
-      "openclawEnabled",
-      "openclawGatewayUrl", 
-      "openclawAuthToken",
-      "openclawAgentId"
-    ]).addListener(() {
-      _openclawService.baseUrl = settingsBox.get('openclawGatewayUrl');
-      _openclawService.authToken = settingsBox.get('openclawAuthToken');
-      _openclawService.agentId = settingsBox.get('openclawAgentId', defaultValue: 'main');
-      notifyListeners();
-    });
+    return _modelProvider.fetchMyModels(_connectionProvider);
   }
 
   Future<void> saveAsNewModel(String modelName) async {
     final associatedChat = currentChat;
     if (associatedChat == null) {
-      // TODO: Empty chat should be saved as a new model.
       throw OllamaException("No chat is selected.");
     }
 
-    await _ollamaService.createModel(
-      modelName,
-      chat: associatedChat,
-      messages: _messages.toList(),
-    );
+    final connType = _getConnectionTypeForChat(associatedChat);
+    if (connType != ConnectionType.ollama) {
+      throw OllamaException("Saving as a new model is only supported for Ollama connections.");
+    }
+
+    final service = _getServiceForChat(associatedChat);
+    if (service is OllamaService) {
+      await service.createModel(
+        modelName,
+        chat: associatedChat,
+        messages: _messages.toList(),
+      );
+    }
   }
 
   Future<void> generateTitleForCurrentChat() async {
@@ -460,13 +483,29 @@ class ChatProvider extends ChangeNotifier {
     final chat = OllamaChat(
       model: associatedChat.model,
       systemPrompt: GenerateTitleConstants.systemPrompt,
+      connectionId: associatedChat.connectionId,
     );
 
-    // Generate a title for the message
-    final stream = _ollamaService.generateStream(
-      GenerateTitleConstants.prompt + message.content,
-      chat: chat,
-    );
+    final prompt = GenerateTitleConstants.prompt + message.content;
+
+    final service = _getServiceForChat(associatedChat);
+    Stream<OllamaMessage> stream;
+
+    if (service is OllamaService) {
+      stream = service.generateStream(prompt, chat: chat);
+    } else {
+      // OpenClaw and OpenAI-compatible providers use chatStream
+      final titleMessages = [
+        OllamaMessage(prompt, role: OllamaMessageRole.user),
+      ];
+      if (service is OpenClawService) {
+        stream = service.chatStream(titleMessages, chat: chat);
+      } else if (service is OpenAICompatibleService) {
+        stream = service.chatStream(titleMessages, chat: chat);
+      } else {
+        return;
+      }
+    }
 
     var title = "";
     await for (final titleMessage in stream) {

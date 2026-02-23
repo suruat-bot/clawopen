@@ -5,7 +5,10 @@ import 'package:reins/Models/settings_route_arguments.dart';
 import 'package:reins/Pages/chat_page/chat_page_view_model.dart';
 import 'package:reins/Pages/main_page.dart';
 import 'package:reins/Pages/settings_page/settings_page.dart';
+import 'package:reins/Pages/model_library_page.dart';
 import 'package:reins/Providers/chat_provider.dart';
+import 'package:reins/Providers/connection_provider.dart';
+import 'package:reins/Providers/model_provider.dart';
 import 'package:reins/Services/services.dart';
 import 'package:reins/Utils/material_color_adapter.dart';
 import 'package:provider/provider.dart';
@@ -42,32 +45,38 @@ void main() async {
 
   await reviewHelper.incrementCount(isLaunch: true);
 
-  final inAppReview = InAppReview.instance;
-  if (await inAppReview.isAvailable() && reviewHelper.shouldRequestReview()) {
-    await inAppReview.requestReview();
+  try {
+    final inAppReview = InAppReview.instance;
+    if (await inAppReview.isAvailable() && reviewHelper.shouldRequestReview()) {
+      await inAppReview.requestReview();
+    }
+  } catch (_) {
+    // Review prompt may fail if view controller isn't ready yet
   }
 
   runApp(
     MultiProvider(
       providers: [
-        Provider(create: (_) => OllamaService()),
-        Provider(create: (_) => OpenClawService()),
         Provider(create: (_) => DatabaseService()),
         Provider(create: (_) => PermissionService()),
         Provider(create: (_) => ImageService()),
         ChangeNotifierProvider(
+          create: (_) => ConnectionProvider(Hive.box('settings')),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ModelProvider(Hive.box('settings')),
+        ),
+        ChangeNotifierProvider(
           create: (context) => ChatProvider(
-            ollamaService: context.read(),
-            openclawService: context.read(),
-            databaseService: context.read(),
+            connectionProvider: context.read<ConnectionProvider>(),
+            modelProvider: context.read<ModelProvider>(),
+            databaseService: context.read<DatabaseService>(),
           ),
         ),
         Provider(
           create: (context) => ChatPageViewModel(
-            ollamaService: context.read(),
-            databaseService: context.read(),
-            permissionService: context.read(),
-            imageService: context.read(),
+            permissionService: context.read<PermissionService>(),
+            imageService: context.read<ImageService>(),
           ),
         ),
       ],
@@ -118,6 +127,12 @@ class ReinsApp extends StatelessWidget {
 
               return MaterialPageRoute(
                 builder: (context) => SettingsPage(arguments: args),
+              );
+            }
+
+            if (settings.name == '/models') {
+              return MaterialPageRoute(
+                builder: (context) => const ModelLibraryPage(),
               );
             }
 

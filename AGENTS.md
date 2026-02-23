@@ -21,34 +21,52 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 
 ## Phased Development Plan
 
-### Phase 1: Core OpenClaw Integration ✅ (In Progress)
+### Phase 1: Core OpenClaw Integration ✅ (Complete)
 **Goal:** OpenClaw Gateway works as a backend alongside Ollama.
 
 - [x] Fork Reins codebase
 - [x] Create `OpenClawService` (OpenAI-compatible API)
-- [ ] Add connection type abstraction (Ollama vs OpenClaw)
-- [ ] Settings UI: Add/edit OpenClaw connections
+- [x] Add connection type abstraction (Ollama vs OpenClaw)
+- [x] Settings UI: Add/edit OpenClaw connections
   - Gateway URL
   - Auth token
   - Agent ID (default: main)
-- [ ] Connection test ("Test Connection" button)
-- [ ] Switch between Ollama and OpenClaw in chat
+- [x] Connection test ("Test Connection" button)
+- [x] Switch between Ollama and OpenClaw in chat
+- [x] Per-chat backend routing (model name based)
+- [x] Fix SSE streaming duplication bug
 
 **Deliverable:** Users can add an OpenClaw Gateway connection and chat with it.
 
 ---
 
-### Phase 2: Multi-Connection Management
+### Phase 2: Multi-Connection Management ✅ (Complete)
 **Goal:** Manage multiple connections (multiple Ollama servers + multiple gateways).
 
-- [ ] Connection list in Settings
-- [ ] Add/edit/delete connections
-- [ ] Connection types: Ollama (local/remote) or OpenClaw Gateway
-- [ ] Per-chat connection selection
-- [ ] Default connection preference
-- [ ] Connection status indicators (online/offline)
+- [x] Connection list in Settings (ConnectionsSettings widget)
+- [x] Add/edit/delete connections (ConnectionEditDialog)
+- [x] Connection types: Ollama, OpenClaw Gateway, Generic OpenAI-Compatible
+- [x] Per-chat connection selection (connectionId stored per chat)
+- [x] Default connection preference (star toggle in connections list)
+- [x] Connection status indicators (online/offline dots)
+- [x] OpenAI-Compatible provider support (OpenAI, Groq, OpenRouter, NVIDIA NIM, etc.)
+- [x] "My Models" system — two-step model selection:
+  - Model Library page: browse all models from all connections, add/remove
+  - Model picker only shows "My Models" for quick selection
+  - Per-connection add/remove all toggle
+  - Search/filter in both model picker and library
+- [x] Migration from Phase 1 flat settings to Connection model
 
 **Deliverable:** Users can configure and switch between multiple backends.
+
+**Key files created/modified:**
+- `lib/Providers/connection_provider.dart` — manages connections, service caching, status
+- `lib/Providers/model_provider.dart` — "My Models" persistence
+- `lib/Models/connection.dart` — Connection model with types enum
+- `lib/Services/openai_compatible_service.dart` — generic OpenAI-compatible API
+- `lib/Pages/model_library_page.dart` — full-page model browser
+- `lib/Pages/settings_page/subwidgets/connections_settings.dart` — connection list UI
+- `lib/Pages/settings_page/subwidgets/connection_edit_dialog.dart` — add/edit dialog
 
 ---
 
@@ -106,19 +124,35 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 ```
 lib/
 ├── Services/
-│   ├── ollama_service.dart      # Ollama API (original)
-│   ├── openclaw_service.dart    # OpenClaw Gateway API (new)
-│   └── chat_service.dart        # Abstraction layer (TODO)
+│   ├── ollama_service.dart              # Ollama API
+│   ├── openclaw_service.dart            # OpenClaw Gateway API
+│   ├── openai_compatible_service.dart   # Generic OpenAI-compatible API
+│   ├── database_service.dart            # SQLite chat/message storage
+│   ├── permission_service.dart          # Platform permissions
+│   ├── image_service.dart               # Image handling
+│   └── services.dart                    # Barrel export
 ├── Models/
-│   ├── connection.dart          # Connection config (TODO)
+│   ├── connection.dart                  # Connection config + ConnectionType enum
+│   ├── ollama_model.dart                # Model metadata
+│   ├── ollama_chat.dart                 # Chat with connectionId
 │   └── ...existing models...
 ├── Providers/
-│   ├── connection_provider.dart # Manage connections (TODO)
+│   ├── connection_provider.dart         # Manage connections, service routing
+│   ├── model_provider.dart              # "My Models" persistence
+│   ├── chat_provider.dart               # Chat state, streaming, model fetching
 │   └── ...existing providers...
 ├── Pages/
-│   ├── settings/
-│   │   └── connections_page.dart # Connection management (TODO)
+│   ├── model_library_page.dart          # Browse all models, add/remove
+│   ├── settings_page/
+│   │   └── subwidgets/
+│   │       ├── connections_settings.dart # Connection list UI
+│   │       ├── connection_edit_dialog.dart # Add/edit connection
+│   │       └── ...
 │   └── ...existing pages...
+├── Widgets/
+│   ├── selection_bottom_sheet.dart       # Model picker with search
+│   ├── chat_app_bar.dart                # Connection-aware app bar
+│   └── ...
 └── main.dart
 ```
 

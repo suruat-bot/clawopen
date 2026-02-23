@@ -137,9 +137,10 @@ class OpenClawService {
           final data = line.substring(6).trim();
           
           if (data == '[DONE]') {
-            // Stream complete - yield final message
+            // Stream complete - yield final message with empty content
+            // since the provider already accumulated all delta content
             yield OllamaMessage(
-              accumulatedContent,
+              '',
               role: OllamaMessageRole.assistant,
               done: true,
             );
@@ -224,8 +225,18 @@ class OpenClawService {
     return [
       OllamaModel(
         name: 'openclaw:$_agentId',
+        model: 'openclaw:$_agentId',
         modifiedAt: DateTime.now(),
         size: 0,
+        digest: '',
+        details: OllamaModelDetails(
+          parentModel: '',
+          format: '',
+          family: 'openclaw',
+          families: null,
+          parameterSize: '',
+          quantizationLevel: '',
+        ),
       ),
     ];
   }
