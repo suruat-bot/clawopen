@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ai.clawopen.app</id>
+
+  <name>ClawOpen</name>
+  <summary>Multi-platform LLM Chat</summary>
+
+  <description>
+    <p>
+    ClawOpen is a multi-platform LLM chat app that connects to local models via Ollama and cloud-backed AI via OpenClaw Gateway. Get the best of both worlds: privacy-first local inference and powerful cloud models.
+    </p>
+    <p>
+    Key Features:
+    </p>
+    <ul>
+      <li>Connect to Ollama servers and OpenClaw Gateway</li>
+      <li>Multiple connections with per-chat routing</li>
+      <li>Custom system prompts per chat</li>
+      <li>Edit and regenerate responses</li>
+      <li>Send images</li>
+      <li>Fine-tune model parameters for each chat</li>
+      <li>Switch models mid-conversation</li>
+      <li>Real-time message streaming</li>
+      <li>OpenClaw thinking level control</li>
+      <li>WebSocket-based node and session management</li>
+    </ul>
+  </description>
+
+  <icon type="stock">ai.clawopen.app</icon>
+  <launchable type="desktop-id">ai.clawopen.app.desktop</launchable>
+
+  <developer id="ai.clawopen">
+     <name>ClawOpen</name>
+  </developer>
+
+  <categories>
+    <category>Utility</category>
+    <category>Development</category>
+    <category>Chat</category>
+  </categories>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+
+  <content_rating type="oars-1.1" />
+
+  <url type="homepage">https://clawopen.ai</url>
+  <url type="vcs-browser">https://github.com/clawopen/clawopen</url>
+  <url type="bugtracker">https://github.com/clawopen/clawopen/issues</url>
+
+</component>

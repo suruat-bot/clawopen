@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Providers/connection_provider.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
 
 /// A saved model entry — just enough info to identify a model across sessions.
 class MyModel {

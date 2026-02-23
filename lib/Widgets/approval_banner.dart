@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:reins/Providers/openclaw_provider.dart';
+import 'package:clawopen/Providers/openclaw_provider.dart';
 
 /// Shows pending OpenClaw tool approval requests as a banner.
 class ApprovalBanner extends StatelessWidget {

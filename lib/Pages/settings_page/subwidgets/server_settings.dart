@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
-import 'package:reins/Extensions/markdown_stylesheet_extension.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Models/ollama_request_state.dart';
-import 'package:reins/Widgets/ollama_bottom_sheet_header.dart';
+import 'package:clawopen/Extensions/markdown_stylesheet_extension.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Models/ollama_request_state.dart';
+import 'package:clawopen/Widgets/ollama_bottom_sheet_header.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class ServerSettings extends StatefulWidget {

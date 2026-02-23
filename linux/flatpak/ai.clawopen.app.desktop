@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+
+Name=ClawOpen
+Comment=Multi-platform LLM Chat
+Categories=Utility;Development;Chat;
+Keywords=ai;chat;private;ollama;llm;openclaw
+
+Icon=ai.clawopen.app
+Exec=clawopen
+Terminal=false
+StartupNotify=true

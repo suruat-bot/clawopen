@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:reins/Pages/chat_page/chat_page.dart';
-import 'package:reins/Widgets/chat_app_bar.dart';
-import 'package:reins/Widgets/chat_drawer.dart';
+import 'package:clawopen/Pages/chat_page/chat_page.dart';
+import 'package:clawopen/Widgets/chat_app_bar.dart';
+import 'package:clawopen/Widgets/chat_drawer.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-class ReinsMainPage extends StatelessWidget {
-  const ReinsMainPage({super.key});
+class ClawOpenMainPage extends StatelessWidget {
+  const ClawOpenMainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     if (ResponsiveBreakpoints.of(context).isMobile) {
-      return _ReinsMobileMainPage();
+      return _ClawOpenMobileMainPage();
     } else {
-      return _ReinsLargeMainPage();
+      return _ClawOpenLargeMainPage();
     }
   }
 }
 
-class _ReinsMobileMainPage extends StatelessWidget {
-  const _ReinsMobileMainPage({super.key});
+class _ClawOpenMobileMainPage extends StatelessWidget {
+  const _ClawOpenMobileMainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +30,8 @@ class _ReinsMobileMainPage extends StatelessWidget {
   }
 }
 
-class _ReinsLargeMainPage extends StatelessWidget {
-  const _ReinsLargeMainPage({super.key});
+class _ClawOpenLargeMainPage extends StatelessWidget {
+  const _ClawOpenLargeMainPage({super.key});
 
   @override
   Widget build(BuildContext context) {

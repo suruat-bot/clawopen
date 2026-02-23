@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/ollama_request_state.dart';
-import 'package:reins/Providers/connection_provider.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/ollama_request_state.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
 import 'package:provider/provider.dart';
 
 class ConnectionEditDialog extends StatefulWidget {

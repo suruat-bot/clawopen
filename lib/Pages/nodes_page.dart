@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'package:reins/Models/openclaw_event.dart';
-import 'package:reins/Models/openclaw_node.dart';
-import 'package:reins/Providers/openclaw_provider.dart';
+import 'package:clawopen/Models/openclaw_event.dart';
+import 'package:clawopen/Models/openclaw_node.dart';
+import 'package:clawopen/Providers/openclaw_provider.dart';
 
 class NodesPage extends StatelessWidget {
   const NodesPage({super.key});

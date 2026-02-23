@@ -3,24 +3,26 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:notification_centre/notification_centre.dart';
 
-import 'package:reins/Constants/constants.dart';
-import 'package:reins/Models/chat_configure_arguments.dart';
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Models/ollama_message.dart';
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Providers/model_provider.dart';
-import 'package:reins/Services/database_service.dart';
-import 'package:reins/Services/ollama_service.dart';
-import 'package:reins/Services/openai_compatible_service.dart';
-import 'package:reins/Services/openclaw_service.dart';
+import 'package:clawopen/Constants/constants.dart';
+import 'package:clawopen/Models/chat_configure_arguments.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Models/ollama_message.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Providers/model_provider.dart';
+import 'package:clawopen/Providers/openclaw_provider.dart';
+import 'package:clawopen/Services/database_service.dart';
+import 'package:clawopen/Services/ollama_service.dart';
+import 'package:clawopen/Services/openai_compatible_service.dart';
+import 'package:clawopen/Services/openclaw_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ConnectionProvider _connectionProvider;
   final ModelProvider _modelProvider;
   final DatabaseService _databaseService;
+  final OpenClawProvider? _openclawProvider;
 
   List<OllamaMessage> _messages = [];
   List<OllamaMessage> get messages => _messages;
@@ -73,9 +75,11 @@ class ChatProvider extends ChangeNotifier {
     required ConnectionProvider connectionProvider,
     required ModelProvider modelProvider,
     required DatabaseService databaseService,
+    OpenClawProvider? openclawProvider,
   })  : _connectionProvider = connectionProvider,
         _modelProvider = modelProvider,
-        _databaseService = databaseService {
+        _databaseService = databaseService,
+        _openclawProvider = openclawProvider {
     _initialize();
   }
 
@@ -323,6 +327,45 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Returns a chat stream for an OpenClaw connection.
+  /// Uses WebSocket chat.send when WS is connected, falls back to HTTP.
+  Stream<OllamaMessage> _openclawChatStream(
+    OllamaChat chat,
+    OpenClawService httpService,
+  ) {
+    final connId = chat.connectionId;
+    if (connId != null &&
+        _openclawProvider != null &&
+        _openclawProvider!.isWsConnected(connId)) {
+      // Use native WS chat.send
+      final lastUserMsg = _messages.last;
+
+      // Build history from all messages except the last user message
+      final history = _messages
+          .sublist(0, _messages.length - 1)
+          .map((m) => {
+                'role': m.role == OllamaMessageRole.user ? 'user' : 'assistant',
+                'content': m.content,
+              })
+          .toList();
+
+      final thinkingLevelName = chat.thinkingLevel?.name;
+
+      return _openclawProvider!.chatSendStream(
+        connId,
+        message: lastUserMsg.content,
+        sessionKey: chat.effectiveSessionUser,
+        systemPrompt: chat.systemPrompt,
+        thinkingLevel: (thinkingLevelName != null && thinkingLevelName != 'off')
+            ? thinkingLevelName
+            : null,
+        history: history,
+      );
+    }
+    // Fallback to HTTP streaming
+    return httpService.chatStream(_messages, chat: chat);
+  }
+
   Future<OllamaMessage?> _streamOllamaMessage(OllamaChat associatedChat) async {
     if (_messages.isEmpty) return null;
 
@@ -332,7 +375,7 @@ class ChatProvider extends ChangeNotifier {
     if (service is OllamaService) {
       stream = service.chatStream(_messages, chat: associatedChat);
     } else if (service is OpenClawService) {
-      stream = service.chatStream(_messages, chat: associatedChat);
+      stream = _openclawChatStream(associatedChat, service);
     } else if (service is OpenAICompatibleService) {
       stream = service.chatStream(_messages, chat: associatedChat);
     } else {

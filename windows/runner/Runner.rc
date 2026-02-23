@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "dev.ibrahimcetin" "\0"
-            VALUE "FileDescription", "reins" "\0"
+            VALUE "CompanyName", "ClawOpen" "\0"
+            VALUE "FileDescription", "ClawOpen" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "reins" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 dev.ibrahimcetin. All rights reserved." "\0"
-            VALUE "OriginalFilename", "reins.exe" "\0"
-            VALUE "ProductName", "reins" "\0"
+            VALUE "InternalName", "clawopen" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 ClawOpen. All rights reserved." "\0"
+            VALUE "OriginalFilename", "clawopen.exe" "\0"
+            VALUE "ProductName", "ClawOpen" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

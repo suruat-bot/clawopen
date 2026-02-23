@@ -1,6 +1,6 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
-import 'package:reins/Models/settings_route_arguments.dart';
+import 'package:clawopen/Models/settings_route_arguments.dart';
 
 class ChatWelcome extends StatelessWidget {
   final CrossFadeState showingState;
@@ -67,7 +67,7 @@ class _ChatWelcomeText extends StatelessWidget {
     return AnimatedTextKit(
       animatedTexts: [
         TyperAnimatedText(
-          'Welcome to Reins!',
+          'Welcome to ClawOpen!',
           speed: const Duration(milliseconds: 100),
         ),
         TyperAnimatedText(

@@ -81,6 +81,7 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
   - Enum: off, minimal, low, medium, high, xhigh
   - Dropdown in chat configure sheet (conditional on OpenClaw connection)
   - Persisted per-chat in database
+  - `thinking_level` sent in request body to gateway (non-off values only)
 - [x] Session management
   - Sessions page listing active gateway sessions
   - Session detail page with transcript viewer
@@ -101,6 +102,9 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
   - Approval banner in chat page
   - Sessions + Nodes cards in settings (conditional on OpenClaw connections)
 - [x] Tokens per second display on assistant messages
+- [x] Bug fixes (post-audit)
+  - `getAllChats()` now SELECTs `openclaw_session_user` and `thinking_level` columns
+  - `thinking_level` actually sent in both `chat()` and `chatStream()` request bodies
 - [ ] Push notifications (deferred to Phase 5)
 
 **Deliverable:** Full OpenClaw Gateway feature integration.
@@ -118,18 +122,76 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 
 ---
 
-### Phase 4: Branding & Polish
+### Phase 3.5: OpenClaw Native Protocol ✅ (Complete)
+**Goal:** Use the native OpenClaw WebSocket protocol correctly for chat.
+
+- [x] Fix WS protocol version: `protocolVersion: 1` → `minProtocol: 3, maxProtocol: 3`
+- [x] Device token persistence
+  - Extract `deviceToken` from `hello-ok` handshake response
+  - Persist per-connection in Hive (`deviceToken_<connectionId>`)
+  - Send stored token on reconnect via `device.token` param in `connect` request
+- [x] Native `chat.send` over WebSocket
+  - `chatSendStream()` method on `OpenClawWebSocketService`
+  - Handles streaming tokens via `chat.token` events and non-streaming via `res` frame
+  - Passes full conversation history + sessionKey + systemPrompt + thinkingLevel
+  - `OpenClawProvider.chatSendStream()` exposes WS chat per connection
+  - `ChatProvider` routes through WS when connected, falls back to HTTP otherwise
+
+**Deliverable:** ClawOpen uses the correct protocol and native WS chat path.
+
+**Key files modified:**
+- `lib/Services/openclaw_websocket_service.dart` — protocol fix, deviceToken, chatSendStream
+- `lib/Providers/openclaw_provider.dart` — deviceToken storage, chatSendStream delegation
+- `lib/Providers/chat_provider.dart` — WS routing with HTTP fallback
+- `lib/main.dart` — inject OpenClawProvider into ChatProvider
+
+---
+
+### Phase 3.6: Channel Management ✅ (Complete)
+**Goal:** Let users enable/disable gateway chat channels directly from the app.
+
+- [x] `config.get` + `config.patch` + `channels.status` WS methods on `OpenClawWebSocketService`
+- [x] `OpenClawChannel` model (name, enabled, connectionId, connectionName, icon, displayName)
+- [x] `OpenClawProvider.getChannels()` — reads channel config from all connected gateways
+- [x] `OpenClawProvider.setChannelEnabled()` — patches gateway config to toggle a channel
+- [x] `ChannelsPage` — list of configured channels with enable/disable toggles
+  - Grouped by connection when multiple gateways are connected
+  - Optimistic UI update with revert on failure
+  - Refresh button, error + empty states
+- [x] Channels card in Settings (under Sessions/Nodes, OpenClaw connections only)
+- [x] `/channels` route in main.dart
+
+**Deliverable:** Users can manage gateway channels (Telegram, WhatsApp, Discord, etc.) in-app.
+
+**Key files created/modified:**
+- `lib/Models/openclaw_channel.dart` — channel model
+- `lib/Pages/channels_page.dart` — channels list page
+- `lib/Services/openclaw_websocket_service.dart` — getConfig, patchConfig, getChannelsStatus
+- `lib/Providers/openclaw_provider.dart` — getChannels, setChannelEnabled
+- `lib/Pages/settings_page/settings_page.dart` — Channels card
+- `lib/main.dart` — /channels route + import
+
+---
+
+### Phase 4: Branding & Polish ✅ (Complete)
 **Goal:** ClawOpen identity and app store readiness.
 
-- [ ] Rename package: `dev.ibrahimcetin.reins` → `ai.clawopen.app`
-- [ ] Update app name: "Reins" → "ClawOpen"
-- [ ] New app icon and branding
-- [ ] Update splash screen
-- [ ] About page with credits (original Reins + OpenClaw)
-- [ ] App Store metadata (screenshots, description)
-- [ ] Privacy policy update
+- [x] Rename Dart package: `reins` → `clawopen` (pubspec.yaml + all 40+ imports)
+- [x] Rename bundle ID: `dev.ibrahimcetin.reins` → `ai.clawopen.app` (all platforms)
+- [x] Update app name: "Reins" → "ClawOpen" (all platforms + UI strings)
+- [x] Rename Dart class names (`ReinsApp` → `ClawOpenApp`, `ReinsMainPage` → `ClawOpenMainPage`, etc.)
+- [x] Update settings about section (`reins_settings.dart` → `clawopen_settings.dart`)
+  - URLs: `https://clawopen.ai` and `https://github.com/clawopen/clawopen`
+- [x] Privacy policy updated (`PRIVACY` file)
+- [x] Linux flatpak metadata (`ai.clawopen.app.desktop`, `ai.clawopen.app.metainfo.xml`)
+- [x] Windows RC file (CompanyName, ProductName, OriginalFilename, etc.)
+- [x] Web manifest (name, short_name, description)
+- [ ] New app icon (deferred — awaiting assets)
+- [ ] Splash screen (deferred — awaiting assets)
+- [ ] App Store screenshots and metadata (deferred)
 
 **Deliverable:** Publishable app with ClawOpen branding.
+**Build output:** `ClawOpen.app` (50MB, macOS Release)
 
 ---
 

@@ -5,16 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-import 'package:reins/Constants/constants.dart';
-import 'package:reins/Models/chat_preset.dart';
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Providers/chat_provider.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Widgets/approval_banner.dart';
-import 'package:reins/Widgets/chat_app_bar.dart';
-import 'package:reins/Widgets/ollama_bottom_sheet_header.dart';
-import 'package:reins/Widgets/selection_bottom_sheet.dart';
+import 'package:clawopen/Constants/constants.dart';
+import 'package:clawopen/Models/chat_preset.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Providers/chat_provider.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Widgets/approval_banner.dart';
+import 'package:clawopen/Widgets/chat_app_bar.dart';
+import 'package:clawopen/Widgets/ollama_bottom_sheet_header.dart';
+import 'package:clawopen/Widgets/selection_bottom_sheet.dart';
 
 import 'chat_page_view_model.dart';
 import 'subwidgets/subwidgets.dart';

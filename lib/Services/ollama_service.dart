@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Models/ollama_message.dart';
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Services/ollama_modelfile_generator.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Models/ollama_message.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Services/ollama_modelfile_generator.dart';
 
 class OllamaService {
   /// The base URL for the Ollama service API.

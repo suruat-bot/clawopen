@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/openclaw_session.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Services/openclaw_service.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/openclaw_session.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Services/openclaw_service.dart';
 
 class SessionsPage extends StatefulWidget {
   const SessionsPage({super.key});

@@ -4,8 +4,9 @@ import 'dart:math';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import 'package:reins/Models/openclaw_event.dart';
-import 'package:reins/Models/openclaw_node.dart';
+import 'package:clawopen/Models/ollama_message.dart';
+import 'package:clawopen/Models/openclaw_event.dart';
+import 'package:clawopen/Models/openclaw_node.dart';
 
 /// Persistent WebSocket connection to an OpenClaw Gateway.
 ///
@@ -16,6 +17,12 @@ class OpenClawWebSocketService {
   final String? authToken;
   final String agentId;
   final String connectionId;
+
+  /// Device token received from hello-ok, persisted across reconnects.
+  String? deviceToken;
+
+  /// Called when a new deviceToken is received from the gateway.
+  final void Function(String)? onNewDeviceToken;
 
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
@@ -41,6 +48,8 @@ class OpenClawWebSocketService {
     this.authToken,
     this.agentId = 'main',
     required this.connectionId,
+    this.deviceToken,
+    this.onNewDeviceToken,
   });
 
   /// Converts http(s) URL to ws(s) URL.
@@ -139,6 +148,114 @@ class OpenClawWebSocketService {
     );
   }
 
+  /// Read the full gateway config (channels, agents, etc.).
+  Future<Map<String, dynamic>> getConfig() async {
+    return await sendRequest('config.get');
+  }
+
+  /// Merge-patch the gateway config.
+  /// Example: `{ 'channels': { 'telegram': { 'enabled': false } } }`
+  Future<void> patchConfig(Map<String, dynamic> patch) async {
+    await sendRequest('config.patch', patch);
+  }
+
+  /// Get live status for all channels.
+  Future<Map<String, dynamic>> getChannelsStatus() async {
+    return await sendRequest('channels.status');
+  }
+
+  /// Send a chat message and stream the response.
+  ///
+  /// Handles both streaming (via chat.token events) and non-streaming
+  /// (via the res frame) gateway responses.
+  Stream<OllamaMessage> chatSendStream({
+    required String message,
+    String? sessionKey,
+    String? systemPrompt,
+    String? thinkingLevel,
+    List<Map<String, dynamic>>? history,
+  }) async* {
+    if (_state != OpenClawWsState.connected || _channel == null) {
+      throw Exception('WebSocket not connected');
+    }
+
+    final id = ++_requestIdCounter;
+    final streamController = StreamController<OllamaMessage>();
+    bool streamCompleted = false;
+
+    // Listen for streaming token events correlated to this request
+    StreamSubscription<OpenClawEvent>? eventSub;
+    eventSub = events.listen((event) {
+      if (streamCompleted || streamController.isClosed) return;
+
+      final eventReqId = event.payload['id'];
+      final matches = eventReqId == null || eventReqId == id;
+      if (!matches) return;
+
+      if (event.event == 'chat.token') {
+        final token = event.payload['token'] as String? ?? '';
+        if (token.isNotEmpty) {
+          streamController.add(OllamaMessage(
+            token,
+            role: OllamaMessageRole.assistant,
+            done: false,
+          ));
+        }
+      } else if (event.event == 'chat.done') {
+        streamCompleted = true;
+        if (!streamController.isClosed) streamController.close();
+      }
+    });
+
+    // Register pending request for the res frame
+    final completer = Completer<Map<String, dynamic>>();
+    _pendingRequests[id] = completer;
+
+    final frame = {
+      'type': 'req',
+      'id': id,
+      'method': 'chat.send',
+      'params': {
+        'agentId': agentId,
+        'message': message,
+        if (sessionKey != null && sessionKey.isNotEmpty)
+          'sessionKey': sessionKey,
+        if (systemPrompt != null && systemPrompt.isNotEmpty)
+          'systemPrompt': systemPrompt,
+        if (thinkingLevel != null && thinkingLevel != 'off')
+          'thinkingLevel': thinkingLevel,
+        if (history != null && history.isNotEmpty) 'history': history,
+      },
+    };
+
+    _channel!.sink.add(json.encode(frame));
+
+    // Handle the res frame — non-streaming completion or final ack
+    completer.future.then((payload) {
+      if (streamCompleted || streamController.isClosed) return;
+      // Extract content from various possible response shapes
+      final content = payload['content'] as String?
+          ?? payload['message'] as String?
+          ?? (payload['choices'] as List?)?.firstOrNull?['message']?['content'] as String?;
+      if (content != null && content.isNotEmpty) {
+        streamController.add(OllamaMessage(
+          content,
+          role: OllamaMessageRole.assistant,
+          done: true,
+        ));
+      }
+      if (!streamController.isClosed) streamController.close();
+    }).catchError((error) {
+      if (!streamController.isClosed) {
+        streamController.addError(error);
+        streamController.close();
+      }
+    });
+
+    yield* streamController.stream;
+    await eventSub.cancel();
+  }
+
   /// List paired nodes.
   Future<List<OpenClawNode>> listNodes() async {
     try {
@@ -202,6 +319,15 @@ class OpenClawWebSocketService {
           _handleResponse(frame);
           break;
         case 'event':
+          // Handle connect.challenge directly here to avoid race condition:
+          // the broadcast stream may not have listeners yet when the gateway
+          // sends this event immediately after the WS connection opens.
+          final eventName = frame['event'] as String?;
+          if (eventName == 'connect.challenge') {
+            _sendConnectRequest(
+              frame['payload'] as Map<String, dynamic>? ?? {},
+            );
+          }
           _handleEvent(frame);
           break;
       }
@@ -243,17 +369,9 @@ class OpenClawWebSocketService {
 
   Future<void> _performHandshake() async {
     _handshakeCompleter = Completer<void>();
-
-    // Listen for the connect.challenge event
-    late StreamSubscription<OpenClawEvent> sub;
-    sub = events.listen((event) {
-      if (event.event == 'connect.challenge') {
-        sub.cancel();
-        // Respond with connect request
-        _sendConnectRequest(event.payload);
-      }
-    });
-
+    // connect.challenge is handled directly in _handleMessage() to avoid
+    // a race condition where the gateway sends the event before this
+    // broadcast-stream listener would be registered.
     return _handshakeCompleter!.future;
   }
 
@@ -277,12 +395,21 @@ class OpenClawWebSocketService {
         'scopes': ['operator.read', 'operator.write'],
         if (authToken != null && authToken!.isNotEmpty)
           'auth': {'token': authToken},
+        if (deviceToken != null && deviceToken!.isNotEmpty)
+          'device': {'token': deviceToken},
       },
     };
 
     _channel!.sink.add(json.encode(frame));
 
-    completer.future.then((_) {
+    completer.future.then((payload) {
+      // Extract and persist the device token from hello-ok
+      final newToken = payload['deviceToken'] as String?
+          ?? payload['device']?['token'] as String?;
+      if (newToken != null && newToken.isNotEmpty && newToken != deviceToken) {
+        deviceToken = newToken;
+        onNewDeviceToken?.call(newToken);
+      }
       _handshakeCompleter?.complete();
     }).catchError((error) {
       _handshakeCompleter?.completeError(error);

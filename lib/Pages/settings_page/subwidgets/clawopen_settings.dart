@@ -6,8 +6,8 @@ import 'dart:io' show Platform;
 
 import 'package:clawopen/Widgets/flexible_text.dart';
 
-class ReinsSettings extends StatelessWidget {
-  const ReinsSettings({super.key});
+class ClawOpenSettings extends StatelessWidget {
+  const ClawOpenSettings({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,28 +15,28 @@ class ReinsSettings extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Reins',
+          'ClawOpen',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
         ),
         ListTile(
           leading: Icon(Icons.rate_review),
-          title: Text('Review Reins'),
+          title: Text('Review ClawOpen'),
           subtitle: Text('Share your feedback'),
           onTap: () async {
             if (await InAppReview.instance.isAvailable() && Platform.isIOS) {
               InAppReview.instance.openStoreListing(appStoreId: "6739738501");
             } else {
-              launchUrlString('https://github.com/ibrahimcetin/reins');
+              launchUrlString('https://github.com/clawopen/clawopen');
             }
           },
         ),
         Builder(
           builder: (builderContext) => ListTile(
             leading: Icon(Icons.share),
-            title: Text('Share Reins'),
-            subtitle: Text('Share Reins with your friends'),
+            title: Text('Share ClawOpen'),
+            subtitle: Text('Share ClawOpen with your friends'),
             onTap: () {
               _openShareSheet(builderContext);
             },
@@ -48,16 +48,16 @@ class ReinsSettings extends StatelessWidget {
             title: Text('Try Desktop App'),
             subtitle: Text('Available on macOS and Linux'),
             onTap: () {
-              launchUrlString('https://reins.ibrahimcetin.dev');
+              launchUrlString('https://clawopen.ai');
             },
           ),
         if (Platform.isMacOS || Platform.isLinux || Platform.isWindows)
           ListTile(
             leading: Icon(Icons.phone_iphone_outlined),
             title: Text('Try Mobile App'),
-            subtitle: Text('Available on iOS'),
+            subtitle: Text('Available on iOS and Android'),
             onTap: () {
-              launchUrlString('https://reins.ibrahimcetin.dev');
+              launchUrlString('https://clawopen.ai');
             },
           ),
         ListTile(
@@ -65,7 +65,7 @@ class ReinsSettings extends StatelessWidget {
           title: Text('Go to Source Code'),
           subtitle: Text('View on GitHub'),
           onTap: () {
-            launchUrlString('https://github.com/ibrahimcetin/reins');
+            launchUrlString('https://github.com/clawopen/clawopen');
           },
         ),
         ListTile(
@@ -73,7 +73,7 @@ class ReinsSettings extends StatelessWidget {
           title: Text('Give a Star on GitHub'),
           subtitle: Text('Support the project'),
           onTap: () {
-            launchUrlString('https://github.com/ibrahimcetin/reins');
+            launchUrlString('https://github.com/clawopen/clawopen');
           },
         ),
         Row(
@@ -82,7 +82,7 @@ class ReinsSettings extends StatelessWidget {
           children: [
             Icon(Icons.favorite, color: Colors.red, size: 16),
             FlexibleText(
-              "Thanks for using Reins!",
+              "Thanks for using ClawOpen!",
               textAlign: TextAlign.center,
             ),
           ],
@@ -96,7 +96,7 @@ class ReinsSettings extends StatelessWidget {
     if (box != null) {
       SharePlus.instance.share(
         ShareParams(
-          text: 'Check out Reins: https://reins.ibrahimcetin.dev',
+          text: 'Check out ClawOpen: https://clawopen.ai',
           sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
         ),
       );

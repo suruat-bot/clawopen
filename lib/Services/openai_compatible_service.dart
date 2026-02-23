@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Models/ollama_message.dart';
-import 'package:reins/Models/ollama_model.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Models/ollama_message.dart';
+import 'package:clawopen/Models/ollama_model.dart';
 
 /// Service for communicating with any OpenAI-compatible API provider.
 ///

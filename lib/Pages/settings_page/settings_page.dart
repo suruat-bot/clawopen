@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/settings_route_arguments.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Models/openclaw_event.dart';
-import 'package:reins/Providers/model_provider.dart';
-import 'package:reins/Providers/openclaw_provider.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/settings_route_arguments.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Models/openclaw_event.dart';
+import 'package:clawopen/Providers/model_provider.dart';
+import 'package:clawopen/Providers/openclaw_provider.dart';
 
 import 'subwidgets/subwidgets.dart';
 
@@ -46,7 +46,7 @@ class _SettingsPageContent extends StatelessWidget {
         _MyModelsCard(),
         SizedBox(height: 16),
         _OpenClawCardsSection(),
-        ReinsSettings(),
+        ClawOpenSettings(),
       ],
     );
   }
@@ -113,6 +113,16 @@ class _OpenClawCardsSection extends StatelessWidget {
                     onTap: () => Navigator.of(context).pushNamed('/nodes'),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.cell_tower),
+                title: const Text('Channels'),
+                subtitle: const Text('Manage gateway chat channels'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).pushNamed('/channels'),
               ),
             ),
             const SizedBox(height: 16),

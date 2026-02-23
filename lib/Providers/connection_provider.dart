@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Services/ollama_service.dart';
-import 'package:reins/Services/openai_compatible_service.dart';
-import 'package:reins/Services/openclaw_service.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Services/ollama_service.dart';
+import 'package:clawopen/Services/openai_compatible_service.dart';
+import 'package:clawopen/Services/openclaw_service.dart';
 
 class ConnectionProvider extends ChangeNotifier {
   final Box _settingsBox;

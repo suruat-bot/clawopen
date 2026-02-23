@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Models/ollama_message.dart';
-import 'package:reins/Models/ollama_model.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Models/ollama_message.dart';
+import 'package:clawopen/Models/ollama_model.dart';
 
 /// Service for communicating with an OpenClaw Gateway.
 /// 
@@ -77,6 +77,8 @@ class OpenClawService {
         "messages": await _prepareMessages(messages, chat.systemPrompt),
         "stream": false,
         "user": chat.effectiveSessionUser,
+        if (chat.thinkingLevel != null && chat.thinkingLevel!.name != 'off')
+          "thinking_level": chat.thinkingLevel!.name,
       }),
     );
 
@@ -106,6 +108,8 @@ class OpenClawService {
       "messages": await _prepareMessages(messages, chat.systemPrompt),
       "stream": true,
       "user": chat.effectiveSessionUser,
+      if (chat.thinkingLevel != null && chat.thinkingLevel!.name != 'off')
+        "thinking_level": chat.thinkingLevel!.name,
     });
 
     http.StreamedResponse response = await request.send();

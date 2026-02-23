@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:reins/Models/ollama_request_state.dart';
-import 'package:reins/Services/openclaw_service.dart';
+import 'package:clawopen/Models/ollama_request_state.dart';
+import 'package:clawopen/Services/openclaw_service.dart';
 
 class OpenClawSettings extends StatefulWidget {
   const OpenClawSettings({super.key});

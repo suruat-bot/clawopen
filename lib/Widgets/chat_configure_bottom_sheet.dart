@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:reins/Models/chat_configure_arguments.dart';
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_exception.dart';
-import 'package:reins/Providers/chat_provider.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Widgets/flexible_text.dart';
+import 'package:clawopen/Models/chat_configure_arguments.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_exception.dart';
+import 'package:clawopen/Providers/chat_provider.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Widgets/flexible_text.dart';
 
 import 'ollama_bottom_sheet_header.dart';
 

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'package:reins/Models/connection.dart';
-import 'package:reins/Models/ollama_model.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Providers/model_provider.dart';
+import 'package:clawopen/Models/connection.dart';
+import 'package:clawopen/Models/ollama_model.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Providers/model_provider.dart';
 
 class ModelLibraryPage extends StatefulWidget {
   const ModelLibraryPage({super.key});

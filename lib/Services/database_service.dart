@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:reins/Constants/constants.dart';
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_message.dart';
+import 'package:clawopen/Constants/constants.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_message.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
@@ -159,7 +159,7 @@ END;''');
 
   Future<List<OllamaChat>> getAllChats() async {
     final List<Map<String, dynamic>> maps = await _db.rawQuery(
-        '''SELECT chats.chat_id, chats.model, chats.chat_title, chats.system_prompt, chats.options, chats.connection_id, MAX(messages.timestamp) AS last_update
+        '''SELECT chats.chat_id, chats.model, chats.chat_title, chats.system_prompt, chats.options, chats.connection_id, chats.openclaw_session_user, chats.thinking_level, MAX(messages.timestamp) AS last_update
 FROM chats
 LEFT JOIN messages ON chats.chat_id = messages.chat_id
 GROUP BY chats.chat_id

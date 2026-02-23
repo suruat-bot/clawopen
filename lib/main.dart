@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
-import 'package:reins/Constants/constants.dart';
-import 'package:reins/Models/settings_route_arguments.dart';
-import 'package:reins/Pages/chat_page/chat_page_view_model.dart';
-import 'package:reins/Pages/main_page.dart';
-import 'package:reins/Pages/settings_page/settings_page.dart';
-import 'package:reins/Pages/model_library_page.dart';
-import 'package:reins/Pages/sessions_page.dart';
-import 'package:reins/Pages/nodes_page.dart';
-import 'package:reins/Providers/chat_provider.dart';
-import 'package:reins/Providers/connection_provider.dart';
-import 'package:reins/Providers/model_provider.dart';
-import 'package:reins/Providers/openclaw_provider.dart';
-import 'package:reins/Services/services.dart';
-import 'package:reins/Utils/material_color_adapter.dart';
+import 'package:clawopen/Constants/constants.dart';
+import 'package:clawopen/Models/settings_route_arguments.dart';
+import 'package:clawopen/Pages/chat_page/chat_page_view_model.dart';
+import 'package:clawopen/Pages/main_page.dart';
+import 'package:clawopen/Pages/settings_page/settings_page.dart';
+import 'package:clawopen/Pages/model_library_page.dart';
+import 'package:clawopen/Pages/sessions_page.dart';
+import 'package:clawopen/Pages/nodes_page.dart';
+import 'package:clawopen/Pages/channels_page.dart';
+import 'package:clawopen/Providers/chat_provider.dart';
+import 'package:clawopen/Providers/connection_provider.dart';
+import 'package:clawopen/Providers/model_provider.dart';
+import 'package:clawopen/Providers/openclaw_provider.dart';
+import 'package:clawopen/Services/services.dart';
+import 'package:clawopen/Utils/material_color_adapter.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:reins/Utils/request_review_helper.dart';
+import 'package:clawopen/Utils/request_review_helper.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'dart:io' show Platform;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -79,6 +80,7 @@ void main() async {
             connectionProvider: context.read<ConnectionProvider>(),
             modelProvider: context.read<ModelProvider>(),
             databaseService: context.read<DatabaseService>(),
+            openclawProvider: context.read<OpenClawProvider>(),
           ),
         ),
         Provider(
@@ -88,13 +90,13 @@ void main() async {
           ),
         ),
       ],
-      child: const ReinsApp(),
+      child: const ClawOpenApp(),
     ),
   );
 }
 
-class ReinsApp extends StatelessWidget {
-  const ReinsApp({super.key});
+class ClawOpenApp extends StatelessWidget {
+  const ClawOpenApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +128,7 @@ class ReinsApp extends StatelessWidget {
           onGenerateRoute: (settings) {
             if (settings.name == '/') {
               return MaterialPageRoute(
-                builder: (context) => const ReinsMainPage(),
+                builder: (context) => const ClawOpenMainPage(),
               );
             }
 
@@ -153,6 +155,12 @@ class ReinsApp extends StatelessWidget {
             if (settings.name == '/nodes') {
               return MaterialPageRoute(
                 builder: (context) => const NodesPage(),
+              );
+            }
+
+            if (settings.name == '/channels') {
+              return MaterialPageRoute(
+                builder: (context) => const ChannelsPage(),
               );
             }
 

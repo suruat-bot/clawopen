@@ -1,7 +1,7 @@
-import 'package:reins/Models/ollama_chat.dart';
-import 'package:reins/Models/ollama_message.dart';
+import 'package:clawopen/Models/ollama_chat.dart';
+import 'package:clawopen/Models/ollama_message.dart';
 import 'package:test/test.dart';
-import 'package:reins/Services/ollama_modelfile_generator.dart';
+import 'package:clawopen/Services/ollama_modelfile_generator.dart';
 
 void main() {
   final generator = OllamaModelfileGenerator();
