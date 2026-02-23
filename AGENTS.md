@@ -70,23 +70,51 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 
 ---
 
-### Phase 3: OpenClaw-Specific Features
+### Phase 3: OpenClaw-Specific Features ✅ (Complete)
 **Goal:** Leverage OpenClaw Gateway's unique capabilities.
 
-- [ ] Session management
-  - Persistent session keys
-  - Session history (if exposed by gateway)
-- [ ] Agent selection
-  - List available agents from gateway
-  - Switch agents mid-conversation
-- [ ] Node awareness (optional)
-  - Show paired nodes status
-  - Camera/screen capture from nodes (if permitted)
-- [ ] Push notifications
-  - Register for gateway push notifications
-  - Background message delivery
+- [x] Stable session persistence
+  - `user` field in chat completions → gateway derives stable session key
+  - `effectiveSessionUser` defaults to `clawopen:<chatId>`
+  - DB migration v2→v3 (openclaw_session_user, thinking_level columns)
+- [x] Thinking level control
+  - Enum: off, minimal, low, medium, high, xhigh
+  - Dropdown in chat configure sheet (conditional on OpenClaw connection)
+  - Persisted per-chat in database
+- [x] Session management
+  - Sessions page listing active gateway sessions
+  - Session detail page with transcript viewer
+  - `invokeTool()` for sessions_list and sessions_history
+- [x] WebSocket service
+  - Challenge/response handshake with OpenClaw protocol
+  - Request/response pattern with Completers
+  - Auto-reconnect with exponential backoff (1s→30s max)
+  - Event broadcasting via StreamController
+- [x] OpenClaw Provider
+  - WebSocket lifecycle per OpenClaw connection
+  - Node awareness (list, describe, online/offline)
+  - Tool approval requests (approve/deny from chat)
+  - App lifecycle handling (reconnect on resume)
+- [x] UI surfaces
+  - WebSocket status dot (green/orange/red) in chat app bar
+  - Nodes page with capabilities chips
+  - Approval banner in chat page
+  - Sessions + Nodes cards in settings (conditional on OpenClaw connections)
+- [x] Tokens per second display on assistant messages
+- [ ] Push notifications (deferred to Phase 5)
 
 **Deliverable:** Full OpenClaw Gateway feature integration.
+
+**Key files created/modified:**
+- `lib/Services/openclaw_websocket_service.dart` — WebSocket with handshake, reconnect
+- `lib/Providers/openclaw_provider.dart` — WS lifecycle, nodes, approvals
+- `lib/Models/openclaw_event.dart` — WS state enum, event model
+- `lib/Models/openclaw_node.dart` — device node model
+- `lib/Models/openclaw_approval.dart` — tool approval request model
+- `lib/Models/openclaw_session.dart` — session + transcript models
+- `lib/Pages/sessions_page.dart` — session list + detail
+- `lib/Pages/nodes_page.dart` — paired device nodes
+- `lib/Widgets/approval_banner.dart` — tool approval banner
 
 ---
 
@@ -108,6 +136,7 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 ### Phase 5: Advanced Features (Future)
 **Goal:** Power-user and enterprise features.
 
+- [ ] Push notifications (from OpenClaw Gateway)
 - [ ] Markdown rendering improvements
 - [ ] Code syntax highlighting
 - [ ] File attachments (documents, not just images)
@@ -125,24 +154,32 @@ Instead of building from scratch, we extend Reins to also support OpenClaw Gatew
 lib/
 ├── Services/
 │   ├── ollama_service.dart              # Ollama API
-│   ├── openclaw_service.dart            # OpenClaw Gateway API
+│   ├── openclaw_service.dart            # OpenClaw Gateway HTTP API
+│   ├── openclaw_websocket_service.dart  # OpenClaw Gateway WebSocket
 │   ├── openai_compatible_service.dart   # Generic OpenAI-compatible API
-│   ├── database_service.dart            # SQLite chat/message storage
+│   ├── database_service.dart            # SQLite chat/message storage (v3)
 │   ├── permission_service.dart          # Platform permissions
 │   ├── image_service.dart               # Image handling
 │   └── services.dart                    # Barrel export
 ├── Models/
 │   ├── connection.dart                  # Connection config + ConnectionType enum
 │   ├── ollama_model.dart                # Model metadata
-│   ├── ollama_chat.dart                 # Chat with connectionId
+│   ├── ollama_chat.dart                 # Chat with connectionId, thinkingLevel
+│   ├── openclaw_event.dart              # WS state enum, event model
+│   ├── openclaw_node.dart               # Device node model
+│   ├── openclaw_approval.dart           # Tool approval request
+│   ├── openclaw_session.dart            # Session + transcript models
 │   └── ...existing models...
 ├── Providers/
 │   ├── connection_provider.dart         # Manage connections, service routing
 │   ├── model_provider.dart              # "My Models" persistence
 │   ├── chat_provider.dart               # Chat state, streaming, model fetching
+│   ├── openclaw_provider.dart           # WS lifecycle, nodes, approvals
 │   └── ...existing providers...
 ├── Pages/
 │   ├── model_library_page.dart          # Browse all models, add/remove
+│   ├── sessions_page.dart               # OpenClaw session list + detail
+│   ├── nodes_page.dart                  # OpenClaw paired device nodes
 │   ├── settings_page/
 │   │   └── subwidgets/
 │   │       ├── connections_settings.dart # Connection list UI
@@ -151,7 +188,8 @@ lib/
 │   └── ...existing pages...
 ├── Widgets/
 │   ├── selection_bottom_sheet.dart       # Model picker with search
-│   ├── chat_app_bar.dart                # Connection-aware app bar
+│   ├── chat_app_bar.dart                # Connection-aware app bar + WS status
+│   ├── approval_banner.dart             # Tool approval approve/deny banner
 │   └── ...
 └── main.dart
 ```

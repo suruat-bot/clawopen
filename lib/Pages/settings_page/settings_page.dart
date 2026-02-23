@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:reins/Models/connection.dart';
 import 'package:reins/Models/settings_route_arguments.dart';
+import 'package:reins/Providers/connection_provider.dart';
+import 'package:reins/Models/openclaw_event.dart';
 import 'package:reins/Providers/model_provider.dart';
+import 'package:reins/Providers/openclaw_provider.dart';
 
 import 'subwidgets/subwidgets.dart';
 
@@ -41,6 +45,7 @@ class _SettingsPageContent extends StatelessWidget {
         SizedBox(height: 16),
         _MyModelsCard(),
         SizedBox(height: 16),
+        _OpenClawCardsSection(),
         ReinsSettings(),
       ],
     );
@@ -67,6 +72,53 @@ class _MyModelsCard extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _OpenClawCardsSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ConnectionProvider>(
+      builder: (context, connProvider, _) {
+        final hasOpenClaw = connProvider.connections
+            .any((c) => c.type == ConnectionType.openclaw);
+        if (!hasOpenClaw) return const SizedBox.shrink();
+
+        return Column(
+          children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.history),
+                title: const Text('Sessions'),
+                subtitle: const Text('View active gateway sessions'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).pushNamed('/sessions'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Consumer<OpenClawProvider>(
+                builder: (context, ocProvider, _) {
+                  final nodeCount = ocProvider.nodes.length;
+                  return ListTile(
+                    leading: const Icon(Icons.devices),
+                    title: const Text('Nodes'),
+                    subtitle: Text(
+                      nodeCount == 0
+                          ? 'View paired devices'
+                          : '$nodeCount node${nodeCount == 1 ? '' : 's'} available',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).pushNamed('/nodes'),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }

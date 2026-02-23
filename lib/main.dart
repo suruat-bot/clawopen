@@ -6,9 +6,12 @@ import 'package:reins/Pages/chat_page/chat_page_view_model.dart';
 import 'package:reins/Pages/main_page.dart';
 import 'package:reins/Pages/settings_page/settings_page.dart';
 import 'package:reins/Pages/model_library_page.dart';
+import 'package:reins/Pages/sessions_page.dart';
+import 'package:reins/Pages/nodes_page.dart';
 import 'package:reins/Providers/chat_provider.dart';
 import 'package:reins/Providers/connection_provider.dart';
 import 'package:reins/Providers/model_provider.dart';
+import 'package:reins/Providers/openclaw_provider.dart';
 import 'package:reins/Services/services.dart';
 import 'package:reins/Utils/material_color_adapter.dart';
 import 'package:provider/provider.dart';
@@ -65,6 +68,11 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ModelProvider(Hive.box('settings')),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => OpenClawProvider(
+            connectionProvider: context.read<ConnectionProvider>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (context) => ChatProvider(
@@ -133,6 +141,18 @@ class ReinsApp extends StatelessWidget {
             if (settings.name == '/models') {
               return MaterialPageRoute(
                 builder: (context) => const ModelLibraryPage(),
+              );
+            }
+
+            if (settings.name == '/sessions') {
+              return MaterialPageRoute(
+                builder: (context) => const SessionsPage(),
+              );
+            }
+
+            if (settings.name == '/nodes') {
+              return MaterialPageRoute(
+                builder: (context) => const NodesPage(),
               );
             }
 

@@ -1,6 +1,33 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
+/// Thinking level for OpenClaw Gateway sessions.
+enum OpenClawThinkingLevel {
+  off,
+  minimal,
+  low,
+  medium,
+  high,
+  xhigh;
+
+  String get label {
+    switch (this) {
+      case off:
+        return 'Off';
+      case minimal:
+        return 'Minimal';
+      case low:
+        return 'Low';
+      case medium:
+        return 'Medium';
+      case high:
+        return 'High';
+      case xhigh:
+        return 'Extra High';
+    }
+  }
+}
+
 class OllamaChat {
   final String id;
   final String model;
@@ -8,6 +35,8 @@ class OllamaChat {
   final String? systemPrompt;
   final OllamaChatOptions options;
   final String? connectionId;
+  final String? openclawSessionUser;
+  final OpenClawThinkingLevel? thinkingLevel;
 
   OllamaChat({
     String? id,
@@ -16,9 +45,14 @@ class OllamaChat {
     this.systemPrompt,
     OllamaChatOptions? options,
     this.connectionId,
+    this.openclawSessionUser,
+    this.thinkingLevel,
   })  : id = id ?? Uuid().v4(),
         title = title ?? 'New Chat',
         options = options ?? OllamaChatOptions();
+
+  /// Returns the session user identifier for OpenClaw, defaulting to "clawopen:<id>".
+  String get effectiveSessionUser => openclawSessionUser ?? 'clawopen:$id';
 
   factory OllamaChat.fromMap(Map<String, dynamic> map) {
     return OllamaChat(
@@ -30,6 +64,10 @@ class OllamaChat {
           ? OllamaChatOptions.fromJson(map['options'])
           : null,
       connectionId: map['connection_id'],
+      openclawSessionUser: map['openclaw_session_user'],
+      thinkingLevel: map['thinking_level'] != null
+          ? OpenClawThinkingLevel.values.byName(map['thinking_level'])
+          : null,
     );
   }
 }

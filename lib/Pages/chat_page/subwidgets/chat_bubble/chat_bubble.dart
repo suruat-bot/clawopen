@@ -114,8 +114,18 @@ class _ChatBubbleBody extends StatelessWidget {
               onTapLink: (text, href, title) => launchUrlString(href!),
             ),
           ),
-          Text(
-            TimeOfDay.fromDateTime(message.createdAt.toLocal()).format(context),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: TimeOfDay.fromDateTime(message.createdAt.toLocal()).format(context),
+                ),
+                if (_tokensPerSecond != null)
+                  TextSpan(
+                    text: '  · ${_tokensPerSecond!.toStringAsFixed(1)} tok/s',
+                  ),
+              ],
+            ),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -127,6 +137,14 @@ class _ChatBubbleBody extends StatelessWidget {
 
   /// Returns true if the message is sent from the user.
   bool get isSentFromUser => message.role == OllamaMessageRole.user;
+
+  /// Calculates tokens per second from eval metadata, if available.
+  double? get _tokensPerSecond {
+    final count = message.evalCount;
+    final duration = message.evalDuration;
+    if (count == null || duration == null || duration == 0) return null;
+    return count / (duration / 1e9);
+  }
 
   /// Returns the alignment of the bubble.
   ///

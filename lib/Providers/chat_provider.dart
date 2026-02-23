@@ -61,6 +61,7 @@ class ChatProvider extends ChangeNotifier {
       return ChatConfigureArguments(
         systemPrompt: currentChat!.systemPrompt,
         chatOptions: currentChat!.options,
+        thinkingLevel: currentChat!.thinkingLevel,
       );
     }
   }
@@ -192,6 +193,7 @@ class ChatProvider extends ChangeNotifier {
     String? newTitle,
     String? newSystemPrompt,
     OllamaChatOptions? newOptions,
+    OpenClawThinkingLevel? newThinkingLevel,
   }) async {
     await updateChat(
       currentChat,
@@ -199,6 +201,7 @@ class ChatProvider extends ChangeNotifier {
       newTitle: newTitle,
       newSystemPrompt: newSystemPrompt,
       newOptions: newOptions,
+      newThinkingLevel: newThinkingLevel,
     );
   }
 
@@ -211,6 +214,7 @@ class ChatProvider extends ChangeNotifier {
     String? newTitle,
     String? newSystemPrompt,
     OllamaChatOptions? newOptions,
+    OpenClawThinkingLevel? newThinkingLevel,
   }) async {
     if (chat == null) {
       final chatOptions = newOptions ?? _emptyChatConfiguration?.chatOptions;
@@ -225,6 +229,7 @@ class ChatProvider extends ChangeNotifier {
         newTitle: newTitle,
         newSystemPrompt: newSystemPrompt,
         newOptions: newOptions,
+        newThinkingLevel: newThinkingLevel?.name,
       );
 
       final chatIndex = _chats.indexWhere((c) => c.id == chat.id);

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reins/Models/chat_configure_arguments.dart';
+import 'package:reins/Models/connection.dart';
 import 'package:reins/Models/ollama_chat.dart';
 import 'package:reins/Models/ollama_exception.dart';
 import 'package:reins/Providers/chat_provider.dart';
+import 'package:reins/Providers/connection_provider.dart';
 import 'package:reins/Widgets/flexible_text.dart';
 
 import 'ollama_bottom_sheet_header.dart';
@@ -53,6 +55,7 @@ class _ChatConfigureBottomSheetContent extends StatefulWidget {
 class __ChatConfigureBottomSheetContentState
     extends State<_ChatConfigureBottomSheetContent> {
   late OllamaChatOptions _chatOptions;
+  OpenClawThinkingLevel? _thinkingLevel;
 
   final _scrollController = ScrollController();
   bool _showAdvancedConfigurations = false;
@@ -62,6 +65,7 @@ class __ChatConfigureBottomSheetContentState
     super.initState();
 
     _chatOptions = widget.arguments.chatOptions;
+    _thinkingLevel = widget.arguments.thinkingLevel;
   }
 
   @override
@@ -111,6 +115,66 @@ class __ChatConfigureBottomSheetContentState
           onChanged: (v) => _chatOptions.temperature = v ?? 0.8,
         ),
         const SizedBox(height: 16),
+        Builder(
+          builder: (context) {
+            final chatProvider = context.read<ChatProvider>();
+            final chat = chatProvider.currentChat;
+            if (chat?.connectionId == null) return const SizedBox.shrink();
+            final connProvider = context.read<ConnectionProvider>();
+            final conn = connProvider.getConnection(chat!.connectionId!);
+            if (conn?.type != ConnectionType.openclaw) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: DropdownButtonFormField<OpenClawThinkingLevel?>(
+                value: _thinkingLevel,
+                decoration: InputDecoration(
+                  labelText: 'Thinking Level',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Thinking Level'),
+                          content: const Text(
+                            'Controls the depth of reasoning the AI uses. '
+                            'Higher levels produce more thorough but slower responses. '
+                            'Only applies to OpenClaw connections.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.info_outline),
+                  ),
+                ),
+                items: [
+                  const DropdownMenuItem<OpenClawThinkingLevel?>(
+                    value: null,
+                    child: Text('Default'),
+                  ),
+                  ...OpenClawThinkingLevel.values.map(
+                    (level) => DropdownMenuItem(
+                      value: level,
+                      child: Text(level.label),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() => _thinkingLevel = value);
+                  widget.arguments.thinkingLevel = value;
+                },
+              ),
+            );
+          },
+        ),
         _BottomSheetTextField(
           initialValue: _chatOptions.seed,
           labelText: 'Seed',

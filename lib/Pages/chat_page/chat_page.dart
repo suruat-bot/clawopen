@@ -8,8 +8,10 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:reins/Constants/constants.dart';
 import 'package:reins/Models/chat_preset.dart';
 import 'package:reins/Models/ollama_model.dart';
+import 'package:reins/Models/connection.dart';
 import 'package:reins/Providers/chat_provider.dart';
 import 'package:reins/Providers/connection_provider.dart';
+import 'package:reins/Widgets/approval_banner.dart';
 import 'package:reins/Widgets/chat_app_bar.dart';
 import 'package:reins/Widgets/ollama_bottom_sheet_header.dart';
 import 'package:reins/Widgets/selection_bottom_sheet.dart';
@@ -91,6 +93,15 @@ class _ChatPageState extends State<ChatPage> {
                   _buildChatFooter(chatProvider),
                 ],
               ),
+            ),
+            Builder(
+              builder: (context) {
+                final chat = chatProvider.currentChat;
+                if (chat?.connectionId == null) return const SizedBox.shrink();
+                final conn = context.read<ConnectionProvider>().getConnection(chat!.connectionId!);
+                if (conn?.type != ConnectionType.openclaw) return const SizedBox.shrink();
+                return const ApprovalBanner();
+              },
             ),
             // TODO: Wrap with ConstrainedBox to limit the height
             Padding(

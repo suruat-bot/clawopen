@@ -22,7 +22,7 @@ class DatabaseService {
   Future<void> open(String databaseFile) async {
     _db = await openDatabase(
       path.join(await getDatabasesPathForPlatform(), databaseFile),
-      version: 2,
+      version: 3,
       onCreate: (Database db, int version) async {
         await db.execute('''CREATE TABLE IF NOT EXISTS chats (
 chat_id TEXT PRIMARY KEY,
@@ -30,7 +30,9 @@ model TEXT NOT NULL,
 chat_title TEXT NOT NULL,
 system_prompt TEXT,
 options TEXT,
-connection_id TEXT
+connection_id TEXT,
+openclaw_session_user TEXT,
+thinking_level TEXT
 ) WITHOUT ROWID;''');
 
         await db.execute('''CREATE TABLE IF NOT EXISTS messages (
@@ -61,6 +63,10 @@ END;''');
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE chats ADD COLUMN connection_id TEXT');
         }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE chats ADD COLUMN openclaw_session_user TEXT');
+          await db.execute('ALTER TABLE chats ADD COLUMN thinking_level TEXT');
+        }
       },
     );
   }
@@ -69,7 +75,12 @@ END;''');
 
   // Chat Operations
 
-  Future<OllamaChat> createChat(String model, {String? connectionId}) async {
+  Future<OllamaChat> createChat(
+    String model, {
+    String? connectionId,
+    String? openclawSessionUser,
+    String? thinkingLevel,
+  }) async {
     final id = Uuid().v4();
 
     await _db.insert('chats', {
@@ -79,6 +90,8 @@ END;''');
       'system_prompt': null,
       'options': null,
       'connection_id': connectionId,
+      'openclaw_session_user': openclawSessionUser,
+      'thinking_level': thinkingLevel,
     });
 
     return (await getChat(id))!;
@@ -105,6 +118,7 @@ END;''');
     String? newSystemPrompt,
     OllamaChatOptions? newOptions,
     String? newConnectionId,
+    String? newThinkingLevel,
   }) async {
     final values = <String, dynamic>{
       'model': newModel ?? chat.model,
@@ -114,6 +128,9 @@ END;''');
     };
     if (newConnectionId != null) {
       values['connection_id'] = newConnectionId;
+    }
+    if (newThinkingLevel != null) {
+      values['thinking_level'] = newThinkingLevel;
     }
     await _db.update(
       'chats',

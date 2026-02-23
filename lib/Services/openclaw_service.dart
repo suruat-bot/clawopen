@@ -76,6 +76,7 @@ class OpenClawService {
         "model": "openclaw:$_agentId",
         "messages": await _prepareMessages(messages, chat.systemPrompt),
         "stream": false,
+        "user": chat.effectiveSessionUser,
       }),
     );
 
@@ -104,6 +105,7 @@ class OpenClawService {
       "model": "openclaw:$_agentId",
       "messages": await _prepareMessages(messages, chat.systemPrompt),
       "stream": true,
+      "user": chat.effectiveSessionUser,
     });
 
     http.StreamedResponse response = await request.send();
@@ -215,6 +217,56 @@ class OpenClawService {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Invokes a tool on the gateway via POST /tools/invoke.
+  Future<dynamic> invokeTool(
+    String tool, {
+    String? action,
+    Map<String, dynamic>? args,
+    String? sessionKey,
+  }) async {
+    final body = <String, dynamic>{'tool': tool};
+    if (action != null) body['action'] = action;
+    if (args != null) body['args'] = args;
+    if (sessionKey != null) body['sessionKey'] = sessionKey;
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/tools/invoke'),
+      headers: headers,
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 401) {
+      throw OllamaException('Authentication failed.');
+    } else if (response.statusCode == 404) {
+      throw OllamaException('Tool not found or endpoint disabled.');
+    } else {
+      throw OllamaException('Tool invocation failed: ${response.statusCode}');
+    }
+  }
+
+  /// Lists active sessions on the gateway.
+  Future<List<Map<String, dynamic>>> listSessions() async {
+    final result = await invokeTool('sessions_list', action: 'json');
+    if (result is List) {
+      return result.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  /// Gets the transcript/history for a session.
+  Future<List<Map<String, dynamic>>> getSessionHistory(String sessionKey) async {
+    final result = await invokeTool(
+      'sessions_history',
+      args: {'sessionKey': sessionKey},
+    );
+    if (result is List) {
+      return result.cast<Map<String, dynamic>>();
+    }
+    return [];
   }
 
   /// Lists available agents (placeholder - OpenClaw doesn't have a list endpoint yet).

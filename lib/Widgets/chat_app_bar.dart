@@ -8,6 +8,8 @@ import 'package:reins/Widgets/selection_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:reins/Providers/chat_provider.dart';
 import 'package:reins/Providers/connection_provider.dart';
+import 'package:reins/Providers/openclaw_provider.dart';
+import 'package:reins/Models/openclaw_event.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -38,15 +40,37 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       final conn = connId != null
                           ? connectionProvider.getConnection(connId)
                           : null;
-                      if (conn?.type == ConnectionType.openclaw)
+                      if (conn?.type == ConnectionType.openclaw) {
+                        final ocProvider = context.watch<OpenClawProvider>();
+                        final wsState = ocProvider.wsStateForConnection(connId!);
+                        final dotColor = switch (wsState) {
+                          OpenClawWsState.connected => Colors.green,
+                          OpenClawWsState.connecting => Colors.orange,
+                          _ => Colors.red,
+                        };
                         return Padding(
                           padding: const EdgeInsets.only(right: 4.0),
-                          child: Icon(
-                            Icons.cloud_outlined,
-                            size: 12,
-                            color: Theme.of(context).textTheme.labelSmall?.color,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.cloud_outlined,
+                                size: 12,
+                                color: Theme.of(context).textTheme.labelSmall?.color,
+                              ),
+                              const SizedBox(width: 2),
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dotColor,
+                                ),
+                              ),
+                            ],
                           ),
                         );
+                      }
                       return const SizedBox.shrink();
                     }),
                     Text(
@@ -120,6 +144,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     await chatProvider.updateCurrentChat(
       newSystemPrompt: arguments.systemPrompt,
       newOptions: arguments.chatOptions,
+      newThinkingLevel: arguments.thinkingLevel,
     );
   }
 
